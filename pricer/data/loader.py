@@ -1,7 +1,5 @@
 import os
 import pandas as pd
-import numpy as np
-from typing import Optional
 
 # Define directory
 DATA_DIR = os.path.join(os.path.dirname(__file__))
@@ -52,4 +50,41 @@ def available_dates(path: str = PATH_OPTIONS, ticker: str = "MSFT") -> list:
     df = pd.read_csv(path, sep=";", usecols=["ticker", "date"])
     return sorted(df[df["ticker"] == ticker]["date"].unique().tolist(), reverse=True)
 
-print(load_options(date='2026-03-03'))
+# Market Data
+def build_market_data(ticker: str = "MSFT", country: str = "United States",
+                      options_date: str | None = None, rates_date: str | None = None,
+                      options_path: str = PATH_OPTIONS, rates_path: str = PATH_RATE_CURVES) -> dict:
+    """
+    Builds a dictionary with a rate curve, an implied vol surface for given ticker and country
+    Dict: {
+        "rate_curve": RateCurve calibrée,
+        "vol_surface": ImpliedVolSurface calibrée,
+        "spot": prix spot du sous-jacent,
+        "r": taux court terme (proxy depuis la courbe),
+        "ticker": ticker,
+        "options_date": date du panel d'options,
+        }
+    """
+    from pricer.models.rate_model import RateCurve
+    from pricer.models.vol_model import ImpliedVolSurface
+
+    # Build rate curve
+    rc = RateCurve(country=country, date=rates_date, data_path=rates_path)
+
+    # Get zero rate from rate curve
+    r_short = rc.zero_rate(0.25)
+
+    # Build vol surface from ticker's options
+    vol_surface = ImpliedVolSurface(
+        ticker=ticker, date=options_date,
+        data_path=options_path, r=r_short
+    )
+
+    return {
+        "rate_curve": rc,
+        "vol_surface": vol_surface,
+        "spot": vol_surface.spot,
+        "r": r_short,
+        "ticker": ticker,
+        "options_date": options_date or available_dates(options_path, ticker)[0],
+    }
