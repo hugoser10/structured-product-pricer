@@ -6,11 +6,11 @@ class CompositeProduct(Product):
     """
     Produit dont price() et greeks() sont la somme pondérée des composantes.
 
-    Les sous-classes déclarent leurs briques via _add_leg(produit, poids).
-    to_dict() reste abstraite : chaque sous-classe décrit ses paramètres métier.
+    Les sous-classes déclarent leurs briques via _add_leg(produit, poids)
+    to_dict() reste abstraite : chaque sous-classe décrit ses paramètres
 
-        price()  = Σ  w_i x leg_i.price()
-        greeks() = Σ  w_i x leg_i.greeks()   (clé par clé)
+        price()  = sum  w_i x leg_i.price()
+        greeks() = sum  w_i x leg_i.greeks()   (clé par clé)
     """
 
     def __init__(self):
@@ -35,5 +35,4 @@ class CompositeProduct(Product):
         return result
 
     @abstractmethod
-    def to_dict(self) -> Dict[str, Any]:
-        pass
+    def to_dict(self) -> Dict[str, Any]: ...
