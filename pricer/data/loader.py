@@ -65,7 +65,7 @@ def build_market_data(ticker: str = "MSFT", country: str = "United States",
         "options_date": date du panel d'options,
         }
     """
-    from pricer.models.rate_model import RateCurve
+    from pricer.models.rates.rate_model import RateCurve
     from pricer.models.vol_model import ImpliedVolSurface
 
     # Build rate curve
