@@ -137,6 +137,24 @@ df["mat_y"] = df["mat"].apply(maturity_converter)
 print(df)
 
 # Stochastic Models
+class StochasticRateModel(ABC):
+    """
+    Abstract class for stochastic rate curve models
+
+    - calibrate(): estimation des paramètres sur les données historiques
+    - zero_bond_price(): calcul du prix d'un ZC
+    - simulate_paths(): simulations de Monte Carlo de chemins de taux
+        - return: array(n_simulations, n_steps+1)
+    """
+
+    @abstractmethod
+    def simulate_paths(self, r0: float, T: float, n_steps: int,
+                       n_simulations: int, seed: int = None) -> np.ndarray:
+        pass
+
+    @abstractmethod
+    def zero_bond_price(self, r0: float, T: float) -> float:
+        pass
 
 class VasicekModel():
     """
@@ -152,9 +170,8 @@ class VasicekModel():
     Le modèle admet des taux négatifs (processus gaussien).
     Formule fermée pour les obligations ZC disponible.
 
-    Calibration : régression OLS sur la discrétisation
-        r(t+Δt) = alpha * r(t) + beta + epsilon
-    avec alpha = 1 - a*Δt,  beta = a*k*Δt.
+    Calibration : régression OLS
+        r(t+Δt) = alpha * r(t) + beta + epsilon, où alpha = 1 - a*Δt, beta = a*k*Δt.
     """
 
     def __init__(self, a: float = 0.1, k: float = 0.03, sigma: float = 0.01):
@@ -173,12 +190,18 @@ class VasicekModel():
         r = np.array(rate_series)
         n_recent = min(len(r), int(window_years * 252))
         r = r[-n_recent:]
+
+        # Régression par OLS
         X = np.column_stack([r[:-1], np.ones(len(r) - 1)])
         y = r[1:]
         coeffs = np.linalg.lstsq(X, y, rcond=None)[0]
         alpha, beta = coeffs
+
+        # Récupération des paramètres structurels depuis alpha et beta
         self.a = max((1 - alpha) / dt, 1e-4)
         self.k = beta / (self.a * dt) if self.a > 1e-4 else float(np.mean(r))
+
+        # sigma estimé via l'écart-type des résidus, annualisé
         residuals = y - X @ coeffs
         self.sigma = np.std(residuals) / np.sqrt(dt)
         return self
@@ -189,8 +212,13 @@ class VasicekModel():
             B(T) = A(T) * exp(sigma_b/sigma * r0)
         """
         a, k, s = self.a, self.k, self.sigma
+
+        # Sensibilité du ZC au taux court
         sigma_b = s * (1 - np.exp(-a * T)) / a
+
+        # Facteur d'ajustement de la convexité
         A = np.exp((sigma_b / s - T) * (k - s**2 / (2 * a**2)) - sigma_b**2 / (4 * a))
+
         return A * np.exp(-sigma_b / s * r0)
 
     def simulate_paths(self, r0: float, T: float, n_steps: int,
@@ -202,10 +230,14 @@ class VasicekModel():
         if seed is not None:
             np.random.seed(seed)
         dt = T / n_steps
+
         paths = np.zeros((n_simulations, n_steps + 1))
         paths[:, 0] = r0
+
+        # Chocs gaussiens pour toutes les simulations et tous les steps
         Z = np.random.normal(0, 1, (n_simulations, n_steps))
         for i in range(n_steps):
             r = paths[:, i]
             paths[:, i + 1] = r + self.a * (self.k - r) * dt + self.sigma * np.sqrt(dt) * Z[:, i]
+
         return paths
