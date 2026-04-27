@@ -372,14 +372,16 @@ class HullWhiteModel(StochasticRateModel):
         theta(t) ≈ a*f(0,t) + df(0,t)/dt
         """
         if self.rate_curve is None:
-            return self.a * 0.03
-        
+            return self.a * 0.03  # fallback : courbe plate à 3%
+
         dt = 0.001
         f0 = self.rate_curve.forward_rate(max(t - dt, 1e-6), t + dt)
+
+        # dérivée numérique du taux forward instantané
         df = (self.rate_curve.forward_rate(t, t + 2*dt) -
               self.rate_curve.forward_rate(max(t - dt, 1e-6), t + dt)) / dt
         sigma2_term = (self.sigma**2 / (2 * self.a)) * (1 - np.exp(-2 * self.a * t))
-        
+
         return self.a * f0 + df + sigma2_term
 
     def zero_bond_price(self, r0: float, T: float) -> float:
@@ -389,14 +391,18 @@ class HullWhiteModel(StochasticRateModel):
         """
         if self.rate_curve is None:
             return VasicekModel(self.a, 0.03, self.sigma).zero_bond_price(r0, T)
-        
+
         a, s = self.a, self.sigma
+
+        # facteur de sensibilité au taux court
         sigma_t = s * (1 - np.exp(-a * T)) / a
-        
+
         P0T = self.rate_curve.discount_factor(T)
         f0T = self.rate_curve.forward_rate(max(T - 0.001, 1e-6), T + 0.001)
+
+        # log A(T) à partir des données de marché initiales
         log_A = np.log(P0T) + sigma_t * f0T - (s**2 / (4 * a)) * (np.exp(-2*a*T) - 1) * (np.exp(-a*T) - 1)**2 / a**2
-        
+
         return np.exp(log_A - sigma_t * r0)
 
     def simulate_paths(self, r0: float, T: float, n_steps: int,
@@ -411,6 +417,8 @@ class HullWhiteModel(StochasticRateModel):
         Z = np.random.normal(0, 1, (n_simulations, n_steps))
         for i in range(n_steps):
             r = paths[:, i]
+            
+            # theta recalculé à chaque pas pour suivre la courbe initiale
             theta_t = self._theta(times[i])
             paths[:, i + 1] = r + (theta_t - self.a * r) * dt + self.sigma * np.sqrt(dt) * Z[:, i]
         return paths
