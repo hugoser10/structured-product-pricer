@@ -2,9 +2,8 @@ from typing import Dict, Any
 from pricer.products.base.rate_product import RateProduct
 from pricer.products.rates.caplet import Caplet
 
-
 class Cap(RateProduct):
-    """Σ Caplet(T_{i-1}, T_i). Parité : Cap − Floor = Swap."""
+    """sum Caplet(T_{i-1}, T_i). Parité : Cap - Floor = Swap."""
 
     def __init__(self, maturity: float, K: float, notional: float,
                  frequency: int, sigma: float, rate_curve):

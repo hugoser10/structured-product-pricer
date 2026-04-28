@@ -2,19 +2,8 @@ from abc import abstractmethod
 from typing import Dict
 from pricer.products.base.product import Product
 
-
 class AtomicEquityProduct(Product):
-    """
-    Classe de base pour les produits equity simples (Option, DigitalOption...).
-
-    Un produit "atomique" est une brique de base qui calcule son prix directement
-    par formule, sans se décomposer en sous-produits. C'est la différence avec
-    EquityProduct (ex: CallSpread) qui combine plusieurs Options entre elles.
-
-    greeks() s'assure que le dictionnaire retourné contient toujours les cinq
-    clés delta, gamma, vega, theta, rho — avec 0.0 si elles ne sont pas
-    calculées par _compute_greeks().
-    """
+    """Produit equity atomique (formule fermee). greeks() garantit delta, gamma, vega, theta, rho."""
 
     _EQUITY_GREEKS = ("delta", "gamma", "vega", "theta", "rho")
 
@@ -26,6 +15,4 @@ class AtomicEquityProduct(Product):
         return g
 
     @abstractmethod
-    def _compute_greeks(self, **kwargs) -> Dict[str, float]:
-        """Calcule et retourne les Greeks du produit sous forme de dictionnaire."""
-        ...
+    def _compute_greeks(self, **kwargs) -> Dict[str, float]: ...

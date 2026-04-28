@@ -3,9 +3,8 @@ from scipy.stats import norm
 from typing import Tuple, Dict, Any
 from pricer.products.base.atomic_rate_product import AtomicRateProduct
 
-
 class Swaption(AtomicRateProduct):
-    """Swaption Black 76. payer = N·A(T)·[S0·N(d1) − K·N(d2)]."""
+    """Swaption. payer = N·A(T)·[S0·N(d1) - K·N(d2)]."""
 
     def __init__(self, T: float, swap_maturity: float, K: float,
                  notional: float, sigma: float, frequency: int,
@@ -20,7 +19,7 @@ class Swaption(AtomicRateProduct):
         self.rate_curve = rate_curve
 
     def _swap_rate_and_annuity(self) -> Tuple[float, float]:
-        # S0 = (DF(T) - DF(T + swap_maturity)) / annuité ; annuité = Σ DF(t_i) * dt
+        # S0 = (DF(T) - DF(T + swap_maturity)) / annuité ; annuité = sum DF(t_i) * dt
         rc = self.rate_curve
         dt = 1.0 / self.frequency
         n = int(round(self.swap_maturity * self.frequency))

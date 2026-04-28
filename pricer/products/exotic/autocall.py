@@ -3,24 +3,12 @@ from scipy.optimize import brentq
 from typing import Dict, Any
 from pricer.products.base.path_dependent_product import PathDependentProduct
 
-
 class Autocall(PathDependentProduct):
     """
-    Autocall à barrières observées à dates fixes, pricé par simulation Monte Carlo.
-
-    À chaque date d'observation, trois scénarios possibles :
-    - Si S(t_i) >= barrier_call[i] * strike : rappel anticipé, l'investisseur
-      reçoit (1 + i * coupon) actualisé.
-    - À maturité seulement, si pas de rappel et S(T) >= barrier_final * strike :
-      remboursement du nominal (1.0).
-    - À maturité seulement, si S(T) < barrier_final * strike : perte en capital,
-      l'investisseur reçoit S(T) / strike.
-
-    Trois modes de simulation disponibles :
-    - GBM (par défaut) : trajectoires log-normales avec vol flat ou de surface.
-    - Heston : trajectoires avec volatilité stochastique si heston est fourni.
-    - Taux stochastiques : actualisation via Hull-White si hw_model est fourni,
-      combinable avec GBM ou Heston.
+    Autocallable Monte Carlo.
+    À chaque date d'observation : si S(t_i) >= barrier_call[i]·strike -> rappel à (1 + i·coupon).
+    À maturité : si S(T) >= barrière finale·strike -> 1, sinon S(T)/strike (perte en capital).
+    `hw_model` (optionnel) injecte des taux stochastiques.
     """
 
     def __init__(self, spot, strike, coupon, barrier_call,
@@ -43,7 +31,6 @@ class Autocall(PathDependentProduct):
 
     @property
     def sigma(self) -> float:
-        """Retourne la vol ATM de la surface si disponible, sinon la vol flat."""
         if self.vol_surface is not None:
             return self.vol_surface.get_atm_vol(self.maturity)
         return self._sigma
@@ -52,25 +39,13 @@ class Autocall(PathDependentProduct):
     def _set_spot(self, v): self.spot = v
 
     def price(self, n_simulations=20000, n_steps_per_obs=20, seed=42, **kwargs) -> float:
-        """
-        Calcule le prix par Monte Carlo.
-
-        Pour chaque simulation, parcourt les dates d'observation dans l'ordre
-        et applique la logique de rappel. Le prix est la moyenne des payoffs
-        actualisés sur l'ensemble des simulations.
-
-        Args:
-            n_simulations : nombre de trajectoires simulées (défaut 20 000).
-            n_steps_per_obs : nombre de pas de temps entre deux observations (défaut 20).
-            seed : graine aléatoire pour la reproductibilité.
-        """
         if seed is not None:
             np.random.seed(seed)
         total_obs = len(self.barrier_call)
         n_steps = total_obs * n_steps_per_obs
         T = self.maturity
 
-        # --- Trajectoires du sous-jacent ---
+        # Trajectoires du sous-jacent
         if self.heston is not None:
             S_paths, _ = self.heston.simulate_paths(self.spot, self.r, T,
                                                      n_steps, n_simulations, seed)
@@ -84,7 +59,7 @@ class Autocall(PathDependentProduct):
             oidx = [int((i+1)*n_steps_per_obs) - 1 for i in range(total_obs)]
             S_obs = S_all[:, oidx]
 
-        # --- Facteurs d'actualisation ---
+        # Facteurs d'actualisation  
         dt_obs = T / total_obs
         if self.hw_model is not None:
             rc = self.hw_model.rate_curve
@@ -97,7 +72,7 @@ class Autocall(PathDependentProduct):
             df_obs = np.tile(np.exp(-self.r * np.arange(1, total_obs+1) * dt_obs),
                              (n_simulations, 1))
 
-        # --- Boucle d'observation : rappel ou non ---
+        # Boucle d'observation : rappel ou non
         payoffs = np.zeros(n_simulations)
         called = np.zeros(n_simulations, dtype=bool)
 
@@ -112,7 +87,7 @@ class Autocall(PathDependentProduct):
                 payoffs[rec] = (1 + nb * self.coupon) * df[rec]
                 called |= rec
             else:
-                # Dernière observation : rappel, remboursement nominal, ou perte en capital
+                # Dernière observation : 3 cas (rappelé / nominal / perte en capital)
                 c1 = active & (S_t >= b_lvl)
                 c2 = active & ~c1 & (S_t >= self.barrier_final * self.strike)
                 c3 = active & ~c1 & ~c2
@@ -123,10 +98,7 @@ class Autocall(PathDependentProduct):
         return float(np.mean(payoffs))
 
     def optimal_coupon(self, target_price=1.0, n_simulations=10000, seed=42) -> float:
-        """
-        Calcule le coupon qui donne un prix cible, par défaut at par (1.0).
-        Utilise la méthode de Brent pour trouver le zéro de price() - target_price.
-        """
+        """Coupon donnant un prix cible (par défaut pair)."""
         def f(c):
             self.coupon = c
             return self.price(n_simulations=n_simulations, seed=seed) - target_price

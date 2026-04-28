@@ -1,5 +1,5 @@
 from pricer.portfolio.portfolio import Portfolio
-from pricer.products.bond import (
+from pricer.products.rates import (
     ZeroCouponBond, CouponBond, FloatingRateBond, InterestRateSwap,
     CallableBond, PutableBond,
 )
@@ -7,7 +7,7 @@ from pricer.products.equity import (
     Option, CallSpread, PutSpread, Butterfly,
 )
 from pricer.products.equity import BarrierOption
-from pricer.products.mixte import Autocall
+from pricer.products.exotic import Autocall
 from pricer.models.rates.hull_white_model import HullWhiteModel
 from pricer.models.volatility.heston_model import HestonModel
 

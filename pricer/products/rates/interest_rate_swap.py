@@ -3,13 +3,13 @@ from pricer.products.base.rate_product import RateProduct
 from pricer.products.rates.coupon_bond import CouponBond
 from pricer.products.rates.floating_rate_bond import FloatingRateBond
 
-
 class InterestRateSwap(RateProduct):
-    """Swap = CouponBond(fixe) − FloatingRateBond (signe selon le sens)."""
+    """Swap = CouponBond(fixe) - FloatingRateBond (signe selon le sens)."""
 
     def __init__(self, nominal: float, fixed_rate: float, maturity: float,
                  frequency: int, pay_fixed: bool, rate_curve):
         super().__init__()
+
         self.nominal = nominal
         self.fixed_rate = fixed_rate
         self.maturity = maturity
@@ -20,6 +20,7 @@ class InterestRateSwap(RateProduct):
         fixed = CouponBond(nominal, fixed_rate, maturity, frequency, rate_curve)
         flt = FloatingRateBond(nominal, maturity, 0.0, frequency, rate_curve)
 
+        # sens 
         if pay_fixed:
             self._add_leg(flt, +1.0)
             self._add_leg(fixed, -1.0)

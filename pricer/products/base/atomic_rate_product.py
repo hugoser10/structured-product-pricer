@@ -2,7 +2,6 @@ from abc import abstractmethod
 from typing import Dict
 from pricer.products.base.product import Product
 
-
 class AtomicRateProduct(Product):
     """Produit de taux atomique. greeks() garantit 'price' et 'dv01'."""
 

@@ -6,5 +6,7 @@ from pricer.products.base.path_dependent_product import PathDependentProduct
 from pricer.products.base.rate_product import RateProduct
 from pricer.products.base.equity_product import EquityProduct
 
+
+# Pour les imports
 __all__ = ["Product", "CompositeProduct", "AtomicRateProduct", "AtomicEquityProduct",
            "PathDependentProduct", "RateProduct", "EquityProduct"]

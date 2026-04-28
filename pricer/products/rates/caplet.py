@@ -3,9 +3,8 @@ from scipy.stats import norm
 from typing import Dict, Any
 from pricer.products.base.atomic_rate_product import AtomicRateProduct
 
-
 class Caplet(AtomicRateProduct):
-    """Caplet/Floorlet par formule de Black 76."""
+    """Caplet/Floorlet"""
 
     def __init__(self, T1: float, T2: float, K: float, notional: float,
                  sigma: float, rate_curve, caplet_type: str = "caplet"):

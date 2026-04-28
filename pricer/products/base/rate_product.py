@@ -4,7 +4,7 @@ from pricer.products.base.composite_product import CompositeProduct
 
 
 class RateProduct(CompositeProduct):
-    """Tag composite famille taux. greeks() garantit 'dv01'."""
+    """Compo de famille de taux. greeks() garantit 'dv01'."""
 
     def greeks(self, **kwargs) -> Dict[str, float]:
         g = super().greeks(**kwargs)

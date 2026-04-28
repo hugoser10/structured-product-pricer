@@ -2,9 +2,11 @@ import numpy as np
 from typing import Dict, Any
 from pricer.products.base.atomic_rate_product import AtomicRateProduct
 
-
 class BondOption(AtomicRateProduct):
-    """Option d'exercice anticipé sur obligation, pricée par Monte Carlo Hull-White."""
+    """
+        Option d'exercice anticipé sur obligation, 
+        pricée par Monte Carlo Hull-White.
+    """
 
     def __init__(self, nominal: float, coupon_rate: float, maturity: float,
                  exercise_dates: list, strike: float, frequency: int,

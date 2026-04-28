@@ -2,16 +2,8 @@ from abc import abstractmethod
 from typing import Dict, Any
 from pricer.products.base.composite_product import CompositeProduct
 
-
 class EquityProduct(CompositeProduct):
-    """
-    Classe de base pour les produits equity composites (CallSpread, Straddle...).
-
-    Hérite de CompositeProduct : le prix et les Greeks sont calculés en sommant
-    ceux de chaque jambe. Ajoute simplement la garantie que les cinq clés
-    delta, gamma, vega, theta, rho sont toujours présentes dans le résultat
-    de greeks(), avec 0.0 par défaut si une jambe ne les retourne pas.
-    """
+    """compo famille equity. greeks() garantit delta, gamma, vega, theta, rho."""
 
     _EQUITY_GREEKS = ("delta", "gamma", "vega", "theta", "rho")
 
@@ -22,6 +14,4 @@ class EquityProduct(CompositeProduct):
         return g
 
     @abstractmethod
-    def to_dict(self) -> Dict[str, Any]:
-        """Retourne les paramètres du produit sous forme de dictionnaire."""
-        ...
+    def to_dict(self) -> Dict[str, Any]: ...

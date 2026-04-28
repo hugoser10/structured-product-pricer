@@ -1,6 +1,6 @@
 from typing import Dict, Any
 from pricer.products.base.equity_product import EquityProduct
-from pricer.products.bond.zero_coupon_bond import ZeroCouponBond
+from pricer.products.rates.zero_coupon_bond import ZeroCouponBond
 from pricer.products.equity.call_spread import CallSpread
 
 class CappedCapitalProtection(EquityProduct):

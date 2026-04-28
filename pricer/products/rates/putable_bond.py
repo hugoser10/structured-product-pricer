@@ -3,7 +3,6 @@ from pricer.products.base.rate_product import RateProduct
 from pricer.products.rates.coupon_bond import CouponBond
 from pricer.products.rates.bond_option import BondOption
 
-
 class PutableBond(RateProduct):
     """Putable = CouponBond + BondOption(put). L'investisseur peut revendre à `put_price`."""
 

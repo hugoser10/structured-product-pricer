@@ -4,7 +4,7 @@ from pricer.products.rates.caplet import Caplet
 
 
 class Floor(RateProduct):
-    """Σ Floorlet(T_{i-1}, T_i)."""
+    """sum Floorlet(T_{i-1}, T_i)."""
 
     def __init__(self, maturity: float, K: float, notional: float,
                  frequency: int, sigma: float, rate_curve):

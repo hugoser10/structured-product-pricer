@@ -3,9 +3,8 @@ from pricer.products.base.rate_product import RateProduct
 from pricer.products.rates.coupon_bond import CouponBond
 from pricer.products.rates.bond_option import BondOption
 
-
 class CallableBond(RateProduct):
-    """Callable = CouponBond − BondOption(call). L'émetteur peut racheter à `call_price`."""
+    """Callable = CouponBond - BondOption(call). L'émetteur peut racheter à `call_price`."""
 
     def __init__(self, nominal: float, coupon_rate: float, maturity: float,
                  call_dates: list, call_price: float, frequency: int, hw_model):
