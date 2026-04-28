@@ -2,7 +2,7 @@ from typing import Dict, Any
 from pricer.products.base.equity_product import EquityProduct
 from pricer.products.rates.coupon_bond import CouponBond
 from pricer.products.rates.zero_coupon_bond import ZeroCouponBond
-from pricer.products.equity.barrier_option import BarrierOption
+from pricer.products.exotic.barrier_option import BarrierOption
 
 class ReverseConvertible(EquityProduct):
     """

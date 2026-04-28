@@ -1,6 +1,7 @@
 import numpy as np
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Dict, Any, Optional
+from pricer.products.base.product import Product
 
 class CompositeProduct(Product):
     """

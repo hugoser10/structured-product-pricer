@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from pricer.products.base.equity_product import EquityProduct
 from pricer.products.equity.option import Option
-from pricer.products.equity.barrier_option import BarrierOption
+from pricer.products.exotic.barrier_option import BarrierOption
 
 class BonusCertificate(EquityProduct):
     """

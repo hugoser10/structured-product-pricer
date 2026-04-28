@@ -8,11 +8,11 @@ import plotly.express as px
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from pricer.data import (
-    build_market_data, available_tickers, available_dates, DEFAULT_INVENTORY_PATH,
-)
+from pricer.data import loader
+
 from pricer.models.rates import RateCurve, VasicekModel, CIRModel, HullWhiteModel, MATURITY_MAP
 from pricer.models.volatility import ImpliedVolSurface, HestonModel, bs_call, bs_put
+
 from pricer.products import (
     ZeroCouponBond, CouponBond, FloatingRateBond, InterestRateSwap,
     CallableBond, PutableBond,
@@ -20,36 +20,37 @@ from pricer.products import (
     TrackerCertificate, BonusCertificate,
     CappedCapitalProtection, ReverseConvertible,
 )
+
 from pricer.portfolio import Portfolio, InventoryLoader, build_portfolios
 
 # Palette de couleurs
 class Palette:
     # Fonds
-    PAGE_BG       = "#FFFFFF"
-    PLOT_BG       = "#FFFFFF"
-    PANEL_BG      = "#F8F9FA"
+    PAGE_BG = "#FFFFFF"
+    PLOT_BG = "#FFFFFF"
+    PANEL_BG = "#F8F9FA"
 
     # Texte
-    TEXT_MAIN     = "#212529"
-    TEXT_MUTED    = "#6C757D"
+    TEXT_MAIN = "#212529"
+    TEXT_MUTED = "#6C757D"
 
     # Grilles et axes
-    GRID          = "#E9ECEF"
-    AXIS          = "#ADB5BD"
-    ZERO_LINE     = "#CED4DA"
+    GRID = "#E9ECEF"
+    AXIS = "#ADB5BD"
+    ZERO_LINE = "#CED4DA"
 
     # Couleurs métier
-    BLUE          = "#2E86C1"  
-    ORANGE        = "#E67E22"  
-    GREEN         = "#27AE60"  
-    PURPLE        = "#8E44AD"  
-    RED           = "#C0392B" 
-    YELLOW        = "#F1C40F"
-    TEAL          = "#16A085" 
+    BLUE = "#2E86C1"  
+    ORANGE = "#E67E22"  
+    GREEN = "#27AE60"  
+    PURPLE = "#8E44AD"  
+    RED = "#C0392B" 
+    YELLOW = "#F1C40F"
+    TEAL = "#16A085" 
 
     # Lignes de référence
-    SPOT_LINE     = "#27AE60"
-    STRIKE_LINE   = "#34495E"
+    SPOT_LINE = "#27AE60"
+    STRIKE_LINE = "#34495E"
 
     # Séquence pour catégories
     CATEGORICAL = ["#2E86C1", "#E67E22", "#27AE60", "#8E44AD", "#E74C3C"]
