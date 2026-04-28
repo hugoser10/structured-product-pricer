@@ -8,7 +8,12 @@ class ImpliedVolSurface:
     """Surface sigma(K, T) construite par inversion BSM Newton-Raphson + spline bicubique."""
 
     def __init__(self, ticker: str = "MSFT", date: str = None,
-                 data_path: str = "pricer/data/options.csv", r: float = 0.045):
+                 data_path: str = None, r: float = 0.045):
+                 
+        if data_path is None:
+            from pricer.data.loader import PATH_OPTIONS
+            data_path = PATH_OPTIONS
+
         self.ticker, self.r = ticker, r
         self._ivol_grid = None
         self._strikes_grid = None

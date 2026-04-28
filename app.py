@@ -8,7 +8,9 @@ import plotly.express as px
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from pricer.data import loader
+from pricer.data import (
+    build_market_data, available_tickers, available_dates, DEFAULT_INVENTORY_PATH,
+)
 
 from pricer.models.rates import RateCurve, VasicekModel, CIRModel, HullWhiteModel, MATURITY_MAP
 from pricer.models.volatility import ImpliedVolSurface, HestonModel, bs_call, bs_put

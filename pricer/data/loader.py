@@ -4,15 +4,21 @@ import pandas as pd
 # Define directory
 DATA_DIR = os.path.join(os.path.dirname(__file__))
 PATH_OPTIONS = os.path.join(DATA_DIR, 'options.csv')
-PATH_RATE_CURVES = os.path.join(DATA_DIR, 'rate_curves.csv')
-
+PATH_RATE_CURVES_CSV = os.path.join(DATA_DIR, 'rate_curves.csv')
+PATH_RATE_CURVES_PARQUET = os.path.join(DATA_DIR, "rate_curves.parquet")
+PATH_RATE_CURVES = (PATH_RATE_CURVES_PARQUET
+                    if os.path.exists(PATH_RATE_CURVES_PARQUET)
+                    else PATH_RATE_CURVES_CSV)
 # Rate curves
 def load_rate_curves(path: str = PATH_RATE_CURVES, country: str = "United States") -> pd.DataFrame:
     """
     Loads rate curves csv and returns a DataFrame for the chosen country
     DataFrame: country, maturity, date, rate (%)
     """
-    df = pd.read_csv(path)
+    if str(path).endswith(".parquet"):
+        df = pd.read_parquet(path)
+    else:
+        df = pd.read_csv(path)
     df["date"] = pd.to_datetime(df["date"])
     if country:
         df: pd.DataFrame = df[df["country"] == country]
@@ -48,7 +54,8 @@ def available_tickers(path: str = PATH_OPTIONS) -> list:
 def available_dates(path: str = PATH_OPTIONS, ticker: str = "AAPL") -> list:
     """Returns a list of the available dates (options)"""
     df = pd.read_csv(path, sep=";", usecols=["ticker", "date"])
-    return sorted(df[df["ticker"] == ticker]["date"].unique().tolist(), reverse=True)
+    return sorted(df[df["ticker"] == ticker]["date"].unique().tolist(), 
+                    reverse=True)
 
 # Market Data
 def build_market_data(ticker: str = "AAPL", country: str = "United States",
@@ -65,8 +72,8 @@ def build_market_data(ticker: str = "AAPL", country: str = "United States",
         "options_date": date du panel d'options,
         }
     """
-    from pricer.models.rates.rate_model import RateCurve
-    from pricer.models.vol_model import ImpliedVolSurface
+    from pricer.models.rates.rate_curve import RateCurve
+    from pricer.models.volatility.implied_vol_surface import ImpliedVolSurface
 
     # Build rate curve
     rc = RateCurve(country=country, date=rates_date, data_path=rates_path)

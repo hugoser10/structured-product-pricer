@@ -16,16 +16,19 @@ class HestonModel:
 
     def _char_func(self, u: complex, S: float, r: float, T: float) -> complex:
         # Fonction caractéristique de log(S_T) sous Heston (forme "little Heston trap" à zéros stables)
-        kappa, theta, zeta, rho, v0 = self.kappa, self.theta, self.zeta, self.rho, self.v0
-        D1 = np.sqrt((kappa - zeta * rho * 1j * u) ** 2 + (u**2 + 1j * u) * zeta**2)
-        g = (kappa - zeta * rho * 1j * u - D1) / (kappa - zeta * rho * 1j * u + D1)
-        exp_D1_T = np.exp(-D1 * T)
-        C_den = 1 - g * exp_D1_T
-        C = (kappa - zeta * rho * 1j * u - D1) / zeta**2 * (T - 2 * np.log(C_den / (1 - g)))
-        A = (r * 1j * u * T
-             + kappa * theta / zeta**2 * ((kappa - zeta * rho * 1j * u - D1) * T
-                                          - 2 * np.log(C_den / (1 - g))))
-        return np.exp(A + C * v0 + 1j * u * np.log(S * np.exp(r * T)))
+        kappa, theta, zeta, rho, v0 = (self.kappa, self.theta, self.zeta,
+                                        self.rho, self.v0)
+        iu = 1j * u
+        a = kappa - rho * zeta * iu
+        d = np.sqrt(a**2 + (zeta**2) * (u**2 + iu))
+        # Forme "trap" : on utilise (a - d) au numérateur de g
+        g = (a - d) / (a + d)
+        exp_dT = np.exp(-d * T)
+        # log de la forme stable
+        log_term = np.log((1 - g * exp_dT) / (1 - g))
+        A = (kappa * theta / zeta**2) * ((a - d) * T - 2 * log_term)
+        B = (a - d) / zeta**2 * (1 - exp_dT) / (1 - g * exp_dT)
+        return np.exp(A + B * v0 + iu * (np.log(S) + r * T))
 
     def price_call_fourier(self, S: float, K: float, T: float, r: float,
                            n_points: int = 128) -> float:
