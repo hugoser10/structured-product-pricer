@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 from scipy.interpolate import CubicSpline
-from abc import ABC, abstractmethod
 
 MATURITY_MAP = {
     "1M": 1/12, "2M": 2/12, "3M": 3/12, "4M": 4/12,
