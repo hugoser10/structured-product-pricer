@@ -688,7 +688,6 @@ with tabs[4]:
         ("Vega", pnl["vega_pnl"], COLORS.PURPLE),
         ("Rho", pnl["rho_pnl"], COLORS.RED),
         ("DV01", pnl["dv01_pnl"], COLORS.BLUE),
-        ("Convexité", pnl["convex_pnl"], COLORS.TEAL),
     ]
     fig_p = go.Figure()
     fig_p.add_trace(go.Bar(

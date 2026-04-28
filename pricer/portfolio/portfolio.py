@@ -122,30 +122,31 @@ class Portfolio:
     def pnl_attribution(self, ds: float = 0.0, dr: float = 0.0,
                         dsigma: float = 0.0, dt: float = 1/365) -> Dict[str, float]:
         """ΔV ≈ θ·Δt + Δ·ΔS + ½·Γ·ΔS² + ν·Δσ + ρ·Δr"""
-        totals = {"theta": 0, "delta": 0, "gamma": 0, "vega": 0, "rho": 0,
-                  "dv01": 0, "convexity": 0}
+        totals = {"theta": 0.0, "delta": 0.0, "gamma": 0.0, "vega": 0.0,
+                  "rho": 0.0, "dv01": 0.0}
         for product, qty, _ in self._positions:
             try:
                 g = product.greeks()
-                for k in totals:
-                    totals[k] += g.get(k, 0) * qty
             except Exception:
-                pass
+                continue
+            for k in totals:
+                totals[k] += g.get(k, 0.0) * qty
+
+        theta_pnl = totals["theta"] * dt * 365
+        delta_pnl = totals["delta"] * ds
+        gamma_pnl = 0.5 * totals["gamma"] * ds ** 2
+        vega_pnl = totals["vega"] * dsigma * 100
+        rho_pnl = totals["rho"] * dr * 10000
         dv01_pnl = totals["dv01"] * dr * 10000
-        convex_pnl = 0.5 * totals["convexity"] * dr ** 2
         return {
-            "theta_pnl": totals["theta"] * dt * 365,
-            "delta_pnl": totals["delta"] * ds,
-            "gamma_pnl": 0.5 * totals["gamma"] * ds**2,
-            "vega_pnl": totals["vega"] * dsigma * 100,
-            "rho_pnl": totals["rho"] * dr * 10000,
-            "dv01_pnl": dv01_pnl,
-            "convex_pnl": convex_pnl,
-            "total_pnl": (totals["theta"] * dt * 365 + totals["delta"] * ds
-                          + 0.5 * totals["gamma"] * ds**2
-                          + totals["vega"] * dsigma * 100
-                          + totals["rho"] * dr * 10000
-                          + dv01_pnl + convex_pnl),
+            "theta_pnl": theta_pnl,
+            "delta_pnl": delta_pnl,
+            "gamma_pnl": gamma_pnl,
+            "vega_pnl":  vega_pnl,
+            "rho_pnl":   rho_pnl,
+            "dv01_pnl":  dv01_pnl,
+            "total_pnl": (theta_pnl + delta_pnl + gamma_pnl
+                          + vega_pnl + rho_pnl + dv01_pnl),
         }
 
     def __len__(self):
