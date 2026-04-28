@@ -1,11 +1,3 @@
-Ce document est la base du code LaTex à coller dans un interpreteur, style overleaf,
-afin de pouvoir générer le document technique sous format pdf.
-
-CE FICHIER EST A SUPPRIMER AVANT DE RENDRE LE PROJET
-
-DEBUT A COLLER DANS UN INTERPRETEUR LATEX (STYLE OVERLEAF)
-------------------------------------------------------------------------------------
-
 \documentclass[11pt,a4paper]{article}
 
 % --- Packages essentiels ---
@@ -179,12 +171,10 @@ La documentation est structurée en deux parties :
 % PARTIE I -- DOCUMENTATION TECHNIQUE
 % =====================================================================
 \begin{center}
-\vspace*{1.5cm}
 {\Huge\bfseries\color{primary} Partie I}\\[0.5cm]
 {\Large\bfseries\color{darkgrey} Documentation technique}\\[0.5cm]
 \rule{0.4\textwidth}{0.5pt}
 \end{center}
-\vspace{1cm}
 
 % ---------------------------------------------------------------------
 \section{Architecture générale}
@@ -205,27 +195,64 @@ pricer/
 |   `-- volatility/
 |       |-- black_scholes.py          (utilitaires)
 |       |-- implied_vol_surface.py
-|       `-- heston_model.py
+|       |-- heston_model.py
 |
 |-- products/
-|   |-- base/                         (7 classes abstraites)
-|   |-- bond/                         (11 produits de taux)
-|   |-- equity/                       (11 produits equity)
-|   `-- mixte/                        (5 notes structurees)
+|   |-- base/ 
+|   |   |-- atomic_equity_product.py
+|   |   |-- atomic_rate_product.py
+|   |   |-- equity_product.py
+|   |   |-- path_dependent_product.py
+|   |   |-- product.py
+|   |   |-- rate_product.py
+|   |   |-- composite_product.py
+|   |-- rates/
+|   |   |-- bond_option.py
+|   |   |-- caplet.py
+|   |   |-- swaption.py
+|   |   |-- zero_coupon_bond.py
+|   |   |-- putable_bond.py
+|   |   |-- interest_rate_swap.py
+|   |   |-- floor.py
+|   |   |-- floating_rate_bond.py
+|   |   |-- coupon_bond.py
+|   |   |-- cap.py
+|   |   |-- callable_bond.py
+|   |-- equity/
+|   |   |-- butterfly.py
+|   |   |-- call_spread.py
+|   |   |-- option.py
+|   |   |-- put_spread.py
+|   |   |-- straddle.py
+|   |   |-- strangle.py
+|   |   |-- strap.py
+|   |   |-- strip.py
+|   |   |-- digital_option.py
+|   `-- exotic/
+|   |   |-- barrier_option.py
+|   |   |-- one_touch_option.py
+|   |   |-- tracker_certificate.py
+|   |   |-- capped_capital_protection.py
+|   |   |-- autocall.py
+|   |   |-- bonus_certificate.py
+|   |   `-- reverse_convertible.py
 |
 |-- portfolio/
 |   |-- portfolio.py
 |   |-- inventory_loader.py
-|   `-- default_portfolios.py
+|   `-- default_portfolio.py
 |
 `-- data/
     |-- loader.py
     |-- rate_curves.parquet
+    |-- rate_cruves.csv
     |-- options.csv
     `-- Inventaire.xlsx
 
 app.py            (interface Streamlit)
 requirements.txt
+Documentation.pdf
+Projet.pdf	(sujet)
 \end{lstlisting}
 
 \subsection{Logique de séparation des produits}
