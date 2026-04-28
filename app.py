@@ -715,14 +715,15 @@ with tabs[5]:
         if st.button("Calibrer Vasicek", width='stretch'):
             from pricer.data import load_rate_curves
             df = load_rate_curves(country=country)
-            three_m = df[df["maturity"] == "3M"].sort_values("date")
+            three_m = df[df["maturity"] == "3M"].sort_index()
             v = VasicekModel().calibrate(three_m["rate"].values / 100)
             st.success(f"a = {v.a:.4f}, k = {v.k*100:.3f}%, σ = {v.sigma*100:.3f}%")
 
         if st.button("Calibrer CIR", width='stretch'):
             from pricer.data import load_rate_curves
             df = load_rate_curves(country=country)
-            three_m = df[df["maturity"] == "3M"].sort_values("date")
+            print(df[df["maturity"] == "3M"].head(10))
+            three_m = df[df["maturity"] == "3M"].sort_index()
             with st.spinner("Calibration CIR par différentielle évolutive..."):
                 cir = CIRModel().calibrate(three_m["rate"].values / 100)
             feller_ok = 2 * cir.a * cir.k > cir.sigma ** 2
