@@ -9,7 +9,7 @@ class AtomicEquityProduct(Product):
 
     def greeks(self, **kwargs) -> Dict[str, float]:
         g = self._compute_greeks(**kwargs)
-        g.setdefault("price", self.price(**kwargs))
+        g["price"] = self.price(**kwargs)
         for key in self._EQUITY_GREEKS:
             g.setdefault(key, 0.0)
         return g
