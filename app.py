@@ -189,7 +189,7 @@ with tabs[0]:
     fig.update_layout(**chart_layout(
         xaxis_title="Maturité (années)", yaxis_title="Taux (%)", height=350,
     ))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     # Surface de volatilité
     st.markdown("### Surface de volatilité implicite")
@@ -219,7 +219,7 @@ with tabs[0]:
                 ),
                 height=480, title=f"Surface implicite - {ticker}",
             ))
-            st.plotly_chart(fig_s, use_container_width=True)
+            st.plotly_chart(fig_s, width='stretch')
 
         # Smile
         st.markdown("### Smile par maturité")
@@ -237,7 +237,7 @@ with tabs[0]:
             xaxis_title="Moneyness (K/S)", yaxis_title="Volatilité implicite (%)",
             height=400,
         ))
-        st.plotly_chart(fig_sm, use_container_width=True)
+        st.plotly_chart(fig_sm, width='stretch')
     except Exception as e:
         st.warning(f"Affichage de la surface impossible : {e}")
 
@@ -295,7 +295,7 @@ with tabs[1]:
         fig_p.update_layout(**chart_layout(
             xaxis_title="Sous-jacent à maturité", yaxis_title="P&L", height=350,
         ))
-        st.plotly_chart(fig_p, use_container_width=True)
+        st.plotly_chart(fig_p, width='stretch')
 
     # Call Spread / Put Spread
     elif product_type in ("Call Spread", "Put Spread"):
@@ -329,7 +329,7 @@ with tabs[1]:
         fig.update_layout(**chart_layout(
             xaxis_title="Sous-jacent à maturité", yaxis_title="P&L", height=300,
         ))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     # Butterfly
     elif product_type == "Butterfly":
@@ -554,7 +554,7 @@ with tabs[2]:
         xaxis_title="Position", yaxis_title="Valeur", height=350,
     ))
     fig.update_xaxes(tickangle=-30)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 # 4. INVENTAIRE
 with tabs[3]:
@@ -614,7 +614,7 @@ with tabs[3]:
                 xaxis_title="Position", yaxis_title="Valeur", height=350,
             ))
             fig_inv.update_xaxes(tickangle=-30)
-            st.plotly_chart(fig_inv, use_container_width=True)
+            st.plotly_chart(fig_inv, width='stretch')
 
 # 5. RISQUES
 with tabs[4]:
@@ -652,7 +652,7 @@ with tabs[4]:
                     color=COLORS.TEXT_MUTED, gridcolor=COLORS.GRID),
         barmode="group", height=320,
     ))
-    st.plotly_chart(fig_b, use_container_width=True)
+    st.plotly_chart(fig_b, width='stretch')
 
     st.markdown("### Risque par bucket de moneyness (K/S)")
     sdf = pr.bucketed_strike_risk()
@@ -670,7 +670,7 @@ with tabs[4]:
         xaxis_title="Bucket de moneyness", yaxis_title="Sensibilité",
         barmode="group", height=320,
     ))
-    st.plotly_chart(fig_s, use_container_width=True)
+    st.plotly_chart(fig_s, width='stretch')
 
     st.markdown("### Attribution de P&L")
     explain("Saisissez un mouvement de marché : la décomposition par grec apparaît ci-dessous.")
@@ -700,7 +700,7 @@ with tabs[4]:
     fig_p.update_layout(**chart_layout(
         height=320, yaxis_title="Contribution au P&L",
     ))
-    st.plotly_chart(fig_p, use_container_width=True)
+    st.plotly_chart(fig_p, width='stretch')
     st.metric("P&L total", f"{pnl['total_pnl']:,.2f}")
 
 # 6. CALIBRATION
@@ -713,14 +713,14 @@ with tabs[5]:
 
     with c1:
         st.markdown("### Modèles de taux")
-        if st.button("Calibrer Vasicek", use_container_width=True):
+        if st.button("Calibrer Vasicek", width='stretch'):
             from pricer.data import load_rate_curves
             df = load_rate_curves(country=country)
             three_m = df[df["maturity"] == "3M"].sort_values("date")
             v = VasicekModel().calibrate(three_m["rate"].values / 100)
             st.success(f"a = {v.a:.4f}, k = {v.k*100:.3f}%, σ = {v.sigma*100:.3f}%")
 
-        if st.button("Calibrer CIR", use_container_width=True):
+        if st.button("Calibrer CIR", width='stretch'):
             from pricer.data import load_rate_curves
             df = load_rate_curves(country=country)
             three_m = df[df["maturity"] == "3M"].sort_values("date")
@@ -732,7 +732,7 @@ with tabs[5]:
 
     with c2:
         st.markdown("### Modèle Heston")
-        if st.button("Calibrer Heston", use_container_width=True):
+        if st.button("Calibrer Heston", width='stretch'):
             with st.spinner("Calibration Heston (DE puis L-BFGS-B)..."):
                 h = HestonModel().calibrate(vol_surface, r=r)
             st.success(f"v0 = {h.v0:.4f}, κ = {h.kappa:.3f}, θ = {h.theta:.4f}, "
@@ -761,4 +761,4 @@ with tabs[5]:
                 yaxis_title="Volatilité Heston (%)",
                 height=300,
             ))
-            st.plotly_chart(fig_h, use_container_width=True)
+            st.plotly_chart(fig_h, width='stretch')
