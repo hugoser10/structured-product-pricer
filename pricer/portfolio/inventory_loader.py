@@ -3,19 +3,16 @@ import pandas as pd
 from datetime import datetime
 from typing import Dict
 from pricer.portfolio.portfolio import Portfolio
-from pricer.products.bond import (
+from pricer.products.rates import (
     InterestRateSwap, FloatingRateBond, ZeroCouponBond, CouponBond,
 )
 from pricer.products.equity import (
     Option, CallSpread, PutSpread, Butterfly,
 )
-from pricer.products.equity import BarrierOption
-from pricer.products.mixte import (
-    Autocall, TrackerCertificate, BonusCertificate,
-    CappedCapitalProtection, ReverseConvertible,
-)
+from pricer.products.exotic import BarrierOption, Autocall
 
-# Codes SSPA - mapping vers les produits du pricer 
+
+# Codes SSPA → mapping vers les produits du pricer (réplication statique)
 SSPA_LABELS = {
     1100: "Tracker Certificate",
     1130: "Bonus Certificate",
@@ -26,7 +23,7 @@ SSPA_LABELS = {
 
 class InventoryLoader:
     """
-    Parse l'Inventaire.xlsx
+    Parse l'Inventaire.xlsx (4 feuilles : Swap, Options, Autocall, Notes structurées)
     et construit un dict {nom_feuille: Portfolio} avec les produits du pricer.
     """
 
@@ -167,7 +164,13 @@ class InventoryLoader:
         return port
 
     def build_structured_notes(self) -> Portfolio:
-        """Dispatch chaque ligne SSPA vers la classe formelle correspondante."""
+        """
+        Notes structurées SSPA (réplication statique) :
+        - 1100 Tracker        : ZCB + Call (participation 1)
+        - 1130 Bonus          : ZCB + Call(0) − Put down-in (barrière 1)
+        - 1220 Capped Capital : ZCB + Call(K=spot, capé à `Cap`)
+        - 1320 Reverse Conv.  : ZCB + short Put (barrière 2 = strike, barrière 1 = KI)
+        """
         port = Portfolio("Inventaire — Notes structurées")
         df = self.get_sheet("Notes structurées")
         S, r = self.spot, self.r
@@ -176,34 +179,37 @@ class InventoryLoader:
             T = self._years_between(row["Date valorisation"], row["Maturité"])
             qty = int(row["Quantité"])
             code = int(row["Code produit SSPA"])
-            raw_part = row.get("Taux de participation")
-            participation = 1.0 if pd.isna(raw_part) else float(raw_part)
+            participation = row.get("Taux de participation")
             barrier1 = row.get("Barrière 1")
             cap = row.get("Cap")
             barrier2 = row.get("Barrière 2")
             tag = SSPA_LABELS.get(code, f"SSPA {code}")
-            common = dict(rate_curve=self.rate_curve, vol_surface=self.vol_surface,
-                          heston=self.heston)
 
             if code == 1100:
-                prod = TrackerCertificate(S, T, r, participation=participation, **common)
-                lbl = f"{tag} T={T:.1f}Y part={participation:.0%}"
+                # Tracker = ZCB(N) + (participation) · Call(K=0)
+                # Approche simplifiée : prix ≈ S0 (réplique le sous-jacent)
+                opt = Option(S, 1e-3, T, r, option_type="call", vol_surface=self.vol_surface)
+                port.add(opt, quantity=qty * float(participation or 1.0),
+                         label=f"{tag} — Tracker T={T:.1f}Y")
             elif code == 1130:
-                prod = BonusCertificate(S, T, r, barrier=float(barrier1), **common)
-                lbl = f"{tag} T={T:.1f}Y B={barrier1:.0f}"
+                # Bonus Certificate ≈ Call(K=0) − Put down-in à barrier1
+                kib = BarrierOption(S, S, T, r, float(barrier1),
+                                     barrier_type="down-and-in", option_type="put",
+                                     heston=self.heston, vol_surface=self.vol_surface)
+                port.add(kib, quantity=-qty,
+                         label=f"{tag} — Bonus T={T:.1f}Y B={barrier1:.0f}")
             elif code == 1220:
-                prod = CappedCapitalProtection(S, T, r, strike=S, cap=float(cap),
-                                                participation=participation, **common)
-                lbl = f"{tag} K={S:.0f}/Cap={cap:.0f}"
+                # Capital Protection capé = ZCB + Call Spread (S, cap)
+                cs = CallSpread(S, S, float(cap), T, r, vol_surface=self.vol_surface)
+                port.add(cs, quantity=qty,
+                         label=f"{tag} — Capped K={S:.0f}/{cap:.0f}")
             elif code == 1320:
-                prod = ReverseConvertible(S, T, r,
-                                           strike=float(barrier2),
-                                           barrier=float(barrier1),
-                                           coupon_rate=0.08, **common)
-                lbl = f"{tag} K={barrier2:.0f} B={barrier1:.0f}"
-            else:
-                continue
-            port.add(prod, quantity=qty, label=lbl)
+                # Reverse Convertible avec barrière = short Put down-in
+                rc_put = BarrierOption(S, float(barrier2), T, r, float(barrier1),
+                                        barrier_type="down-and-in", option_type="put",
+                                        heston=self.heston, vol_surface=self.vol_surface)
+                port.add(rc_put, quantity=-qty,
+                         label=f"{tag} — RevConv K={barrier2:.0f} B={barrier1:.0f}")
         return port
 
     def build_all(self) -> Dict[str, Portfolio]:

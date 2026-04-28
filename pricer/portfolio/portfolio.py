@@ -45,9 +45,7 @@ class Portfolio:
         return pd.DataFrame(rows)
 
     def bucketed_risk(self, maturities: List[float] = None) -> pd.DataFrame:
-        """
-        DV01 et delta agrégés par pilier de maturité par projection barycentrique 
-        """
+        """DV01 et delta agrégés par pilier de maturité."""
         if maturities is None:
             maturities = [1/12, 3/12, 6/12, 1, 2, 3, 5, 7, 10, 15, 20, 30]
         labels = ["1M", "3M", "6M", "1Y", "2Y", "3Y", "5Y", "7Y",
@@ -63,21 +61,12 @@ class Portfolio:
             mat = getattr(product, "maturity", getattr(product, "T", None))
             if mat is None:
                 continue
-            # Recherche des deux piliers encadrant la maturité du flux
-            if mat <= maturities[0]:
-                weights = {labels[0]: 1.0}
-            elif mat >= maturities[-1]:
-                weights = {labels[-1]: 1.0}
-            else:
-                k = next(i for i in range(len(maturities) - 1)
-                         if maturities[i] <= mat <= maturities[i + 1])
-                w_right = (mat - maturities[k]) / (maturities[k + 1] - maturities[k])
-                weights = {labels[k]: 1 - w_right, labels[k + 1]: w_right}
-            for b, w in weights.items():
-                if "dv01" in g:
-                    dv01_b[b] += g["dv01"] * qty * w
-                if "delta" in g:
-                    delta_b[b] += g["delta"] * qty * w
+            idx = int(np.argmin([abs(mat - m) for m in maturities]))
+            b = labels[idx]
+            if "dv01" in g:
+                dv01_b[b] += g["dv01"] * qty
+            if "delta" in g:
+                delta_b[b] += g["delta"] * qty
 
         return pd.DataFrame({
             "maturity_bucket": labels,
@@ -132,45 +121,25 @@ class Portfolio:
 
     def pnl_attribution(self, ds: float = 0.0, dr: float = 0.0,
                         dsigma: float = 0.0, dt: float = 1/365) -> Dict[str, float]:
-        """
-        Attribution P&L au premier (et second) ordre.
-        - Composante equity : θ·Δt + Δ·ΔS + ½·Γ·ΔS² + ν·Δσ + ρ·Δr
-        - Composante taux   : -DV01·(Δr en bp) + ½·convexité·prix·(Δr)² 
-        Pour un bond, DV01 et convexité capturent la sensibilité aux taux ;
-        delta/gamma/vega/rho sont nuls.
-        """
-        totals = {"theta": 0.0, "delta": 0.0, "gamma": 0.0, "vega": 0.0, "rho": 0.0,
-                  "dv01": 0.0, "convexity_term": 0.0}
+        """ΔV ≈ θ·Δt + Δ·ΔS + ½·Γ·ΔS² + ν·Δσ + ρ·Δr"""
+        totals = {"theta": 0, "delta": 0, "gamma": 0, "vega": 0, "rho": 0}
         for product, qty, _ in self._positions:
             try:
                 g = product.greeks()
-                for k in ("theta", "delta", "gamma", "vega", "rho", "dv01"):
+                for k in totals:
                     totals[k] += g.get(k, 0) * qty
-                if "convexity" in g:
-                    totals["convexity_term"] += g["convexity"] * g.get("price", 0) * qty
             except Exception:
                 pass
-
-        # Conversion : DV01 est en €/bp, donc ΔP_taux = -DV01 · (Δr en bp) = -DV01 · dr · 1e4
-        dr_bp = dr * 1e4
-
         return {
             "theta_pnl": totals["theta"] * dt * 365,
             "delta_pnl": totals["delta"] * ds,
-            "gamma_pnl": 0.5 * totals["gamma"] * ds ** 2,
+            "gamma_pnl": 0.5 * totals["gamma"] * ds**2,
             "vega_pnl": totals["vega"] * dsigma * 100,
             "rho_pnl": totals["rho"] * dr * 10000,
-            "dv01_pnl": -totals["dv01"] * dr_bp,
-            "convex_pnl": 0.5 * totals["convexity_term"] * dr ** 2,
-            "total_pnl": (
-                totals["theta"] * dt * 365
-                + totals["delta"] * ds
-                + 0.5 * totals["gamma"] * ds ** 2
-                + totals["vega"] * dsigma * 100
-                + totals["rho"] * dr * 10000
-                - totals["dv01"] * dr_bp
-                + 0.5 * totals["convexity_term"] * dr ** 2
-            ),
+            "total_pnl": (totals["theta"] * dt * 365 + totals["delta"] * ds
+                          + 0.5 * totals["gamma"] * ds**2
+                          + totals["vega"] * dsigma * 100
+                          + totals["rho"] * dr * 10000),
         }
 
     def __len__(self):

@@ -15,7 +15,7 @@ class HestonModel:
         self.v0, self.kappa, self.theta, self.zeta, self.rho = v0, kappa, theta, zeta, rho
 
     def _char_func(self, u: complex, S: float, r: float, T: float) -> complex:
-        # Fonction caractéristique de log(S_T) sous Heston
+        # Fonction caractéristique de log(S_T) sous Heston (forme "little Heston trap" à zéros stables)
         kappa, theta, zeta, rho, v0 = self.kappa, self.theta, self.zeta, self.rho, self.v0
         D1 = np.sqrt((kappa - zeta * rho * 1j * u) ** 2 + (u**2 + 1j * u) * zeta**2)
         g = (kappa - zeta * rho * 1j * u - D1) / (kappa - zeta * rho * 1j * u + D1)
@@ -25,12 +25,11 @@ class HestonModel:
         A = (r * 1j * u * T
              + kappa * theta / zeta**2 * ((kappa - zeta * rho * 1j * u - D1) * T
                                           - 2 * np.log(C_den / (1 - g))))
-        
         return np.exp(A + C * v0 + 1j * u * np.log(S * np.exp(r * T)))
 
     def price_call_fourier(self, S: float, K: float, T: float, r: float,
                            n_points: int = 128) -> float:
-        # Méthode de Carr-Madan
+        # Méthode de Carr-Madan : C = exp(-alpha*log_K)/pi * Re ∫ exp(-i*v*log_K) * psi(v) dv
         if T <= 0:
             return max(S - K, 0.0)
         alpha = 1.5
@@ -53,7 +52,7 @@ class HestonModel:
         fft_in = np.exp(1j * b * v_arr) * psi * eta * simpson
         call_values = np.real(np.exp(-alpha * k_arr) / np.pi * np.fft.fft(fft_in))
 
-        # Interpolation linéaire au log-strike
+        # Interpolation linéaire au log-strike voulu
         log_K = np.log(K)
         idx = np.clip(np.searchsorted(k_arr, log_K), 1, N - 2)
         w = (log_K - k_arr[idx - 1]) / (k_arr[idx] - k_arr[idx - 1])
@@ -62,7 +61,7 @@ class HestonModel:
 
     def simulate_paths(self, S0: float, r: float, T: float, n_steps: int,
                        n_simulations: int, seed: int = None):
-        # Schéma Euler à variance tronquée
+        # Schéma Euler à variance tronquée (full truncation) : v -> max(v, 0)
         if seed is not None:
             np.random.seed(seed)
         dt = T / n_steps
@@ -74,8 +73,6 @@ class HestonModel:
         u1 = np.random.normal(0, 1, (n_simulations, n_steps))
         u2 = np.random.normal(0, 1, (n_simulations, n_steps))
         z1 = u1
-
-        # Cholesky 2x2 pour corréler dW^S et dW^v avec coefficient rho
         z2 = self.rho * z1 + np.sqrt(1 - self.rho**2) * u2
 
         for i in range(n_steps):
@@ -99,20 +96,17 @@ class HestonModel:
         # Calibration en deux passes : DE global puis L-BFGS-B local
         S = surface.spot
         df = surface.get_surface_dataframe()
-
-        # on restreint aux strikes proches de la monnaie pour éviter les wings illiquides
         df = df[(df["moneyness"] >= 0.7) & (df["moneyness"] <= 1.3)].copy()
         df_sample = df.sample(min(40, len(df)), random_state=42)
         atm_iv = surface.get_atm_vol(df["maturity"].mean())
-        v0_init = max(atm_iv ** 2, 0.01)  # initialisation de v0 à la variance ATM observée
+        v0_init = max(atm_iv ** 2, 0.01)
 
         def objective(params):
             v0, kappa, theta, zeta, rho = params
             if (v0 <= 0 or kappa <= 0 or theta <= 0 or zeta <= 0
-                    or abs(rho) >= 0.999 or 2 * kappa * theta <= zeta ** 2):  # condition de Feller
+                    or abs(rho) >= 0.999 or 2 * kappa * theta <= zeta ** 2):
                 return 1e10
             tmp = HestonModel(v0, kappa, theta, zeta, rho)
-
             total = 0.0
             for _, row in df_sample.iterrows():
                 try:
@@ -131,5 +125,4 @@ class HestonModel:
         res = minimize(objective, res_g.x, method="L-BFGS-B",
                        bounds=bounds, options={"maxiter": 200, "ftol": 1e-10})
         self.v0, self.kappa, self.theta, self.zeta, self.rho = res.x
-        
         return self
