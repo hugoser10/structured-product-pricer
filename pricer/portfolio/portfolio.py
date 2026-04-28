@@ -93,13 +93,13 @@ class Portfolio:
             except Exception:
                 continue
             mny = K / S
-            if mny < 0.7:               b = labels[0]
-            elif mny < 0.85:            b = labels[1]
-            elif mny < 0.95:            b = labels[2]
-            elif mny < 1.05:            b = labels[3]
-            elif mny < 1.15:            b = labels[4]
-            elif mny < 1.30:            b = labels[5]
-            else:                       b = labels[6]
+            if mny < 0.7: b = labels[0]
+            elif mny < 0.85: b = labels[1]
+            elif mny < 0.95: b = labels[2]
+            elif mny < 1.05: b = labels[3]
+            elif mny < 1.15: b = labels[4]
+            elif mny < 1.30: b = labels[5]
+            else: b = labels[6]
             for k in ("delta", "gamma", "vega"):
                 buckets[b][k] += g.get(k, 0.0) * qty
         return pd.DataFrame([{"strike_bucket": b, **buckets[b]} for b in labels])

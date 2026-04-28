@@ -27,7 +27,7 @@ def get_latest_curve_date(path: str = PATH_RATE_CURVES, country: str = "United S
     return str(df.index.max())
 
 # Options
-def load_options(path: str = PATH_OPTIONS, ticker: str = "MSFT", date: str | None = None) -> pd.DataFrame:
+def load_options(path: str = PATH_OPTIONS, ticker: str = "AAPL", date: str | None = None) -> pd.DataFrame:
     """
     Loads option data for a given ticker and a given date (or the most recent date)
     DataFrame: ticker, date, side, strike, dte, mid, underlyingPrice, iv, delta, etc
@@ -45,13 +45,13 @@ def available_tickers(path: str = PATH_OPTIONS) -> list:
     df = pd.read_csv(path, sep=";", usecols=["ticker"])
     return sorted(df["ticker"].unique().tolist())
 
-def available_dates(path: str = PATH_OPTIONS, ticker: str = "MSFT") -> list:
+def available_dates(path: str = PATH_OPTIONS, ticker: str = "AAPL") -> list:
     """Returns a list of the available dates (options)"""
     df = pd.read_csv(path, sep=";", usecols=["ticker", "date"])
     return sorted(df[df["ticker"] == ticker]["date"].unique().tolist(), reverse=True)
 
 # Market Data
-def build_market_data(ticker: str = "MSFT", country: str = "United States",
+def build_market_data(ticker: str = "AAPL", country: str = "United States",
                       options_date: str | None = None, rates_date: str | None = None,
                       options_path: str = PATH_OPTIONS, rates_path: str = PATH_RATE_CURVES) -> dict:
     """
@@ -65,7 +65,7 @@ def build_market_data(ticker: str = "MSFT", country: str = "United States",
         "options_date": date du panel d'options,
         }
     """
-    from pricer.models.rate_model import RateCurve
+    from pricer.models.rates.rate_model import RateCurve
     from pricer.models.vol_model import ImpliedVolSurface
 
     # Build rate curve

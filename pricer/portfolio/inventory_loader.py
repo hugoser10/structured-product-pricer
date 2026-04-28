@@ -65,7 +65,7 @@ class InventoryLoader:
         s = str(s).upper()
         return {"1M": 12, "3M": 4, "6M": 2, "1Y": 1}.get(s, 2)
 
-    # ---------- Constructions par feuille ----------
+    # Constructions par feuille
 
     def build_swaps(self) -> Portfolio:
         port = Portfolio("Inventaire — Swaps")
@@ -119,7 +119,7 @@ class InventoryLoader:
                               vol_surface=self.vol_surface)
                 lbl = f"Butterfly K={K1:.0f}/{K2:.0f}/{K3:.0f}"
             elif prod_type in ("Call", "Put") and pd.notna(barrier_type):
-                # Option vanille avec barrière → BarrierOption KO/KI
+                # Option vanille avec barrière -> BarrierOption KO/KI
                 bt = "up-and-out" if str(barrier_type).upper() == "OUT" else "up-and-in"
                 if float(barrier_lvl) < S:
                     bt = bt.replace("up", "down")
