@@ -189,7 +189,7 @@ with tabs[0]:
     fig.update_layout(**chart_layout(
         xaxis_title="Maturité (années)", yaxis_title="Taux (%)", height=350,
     ))
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)
 
     # Surface de volatilité
     st.markdown("### Surface de volatilité implicite")
@@ -219,7 +219,7 @@ with tabs[0]:
                 ),
                 height=480, title=f"Surface implicite - {ticker}",
             ))
-            st.plotly_chart(fig_s, width='stretch')
+            st.plotly_chart(fig_s, use_container_width=True)
 
         # Smile
         st.markdown("### Smile par maturité")
@@ -237,7 +237,7 @@ with tabs[0]:
             xaxis_title="Moneyness (K/S)", yaxis_title="Volatilité implicite (%)",
             height=400,
         ))
-        st.plotly_chart(fig_sm, width='stretch')
+        st.plotly_chart(fig_sm, use_container_width=True)
     except Exception as e:
         st.warning(f"Affichage de la surface impossible : {e}")
 
@@ -295,7 +295,7 @@ with tabs[1]:
         fig_p.update_layout(**chart_layout(
             xaxis_title="Sous-jacent à maturité", yaxis_title="P&L", height=350,
         ))
-        st.plotly_chart(fig_p, width='stretch')
+        st.plotly_chart(fig_p, use_container_width=True)
 
     # Call Spread / Put Spread
     elif product_type in ("Call Spread", "Put Spread"):
@@ -329,7 +329,7 @@ with tabs[1]:
         fig.update_layout(**chart_layout(
             xaxis_title="Sous-jacent à maturité", yaxis_title="P&L", height=300,
         ))
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
 
     # Butterfly
     elif product_type == "Butterfly":
@@ -554,7 +554,7 @@ with tabs[2]:
         xaxis_title="Position", yaxis_title="Valeur", height=350,
     ))
     fig.update_xaxes(tickangle=-30)
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)
 
 # 4. INVENTAIRE
 with tabs[3]:
@@ -614,7 +614,7 @@ with tabs[3]:
                 xaxis_title="Position", yaxis_title="Valeur", height=350,
             ))
             fig_inv.update_xaxes(tickangle=-30)
-            st.plotly_chart(fig_inv, width='stretch')
+            st.plotly_chart(fig_inv, use_container_width=True)
 
 # 5. RISQUES
 with tabs[4]:
@@ -652,7 +652,7 @@ with tabs[4]:
                     color=COLORS.TEXT_MUTED, gridcolor=COLORS.GRID),
         barmode="group", height=320,
     ))
-    st.plotly_chart(fig_b, width='stretch')
+    st.plotly_chart(fig_b, use_container_width=True)
 
     st.markdown("### Risque par bucket de moneyness (K/S)")
     sdf = pr.bucketed_strike_risk()
@@ -670,7 +670,7 @@ with tabs[4]:
         xaxis_title="Bucket de moneyness", yaxis_title="Sensibilité",
         barmode="group", height=320,
     ))
-    st.plotly_chart(fig_s, width='stretch')
+    st.plotly_chart(fig_s, use_container_width=True)
 
     st.markdown("### Attribution de P&L")
     explain("Saisissez un mouvement de marché : la décomposition par grec apparaît ci-dessous.")
@@ -700,7 +700,7 @@ with tabs[4]:
     fig_p.update_layout(**chart_layout(
         height=320, yaxis_title="Contribution au P&L",
     ))
-    st.plotly_chart(fig_p, width='stretch')
+    st.plotly_chart(fig_p, use_container_width=True)
     st.metric("P&L total", f"{pnl['total_pnl']:,.2f}")
 
 # 6. CALIBRATION
@@ -761,4 +761,4 @@ with tabs[5]:
                 yaxis_title="Volatilité Heston (%)",
                 height=300,
             ))
-            st.plotly_chart(fig_h, width='stretch')
+            st.plotly_chart(fig_h, use_container_width=True)

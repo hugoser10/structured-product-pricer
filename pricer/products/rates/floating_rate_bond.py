@@ -21,8 +21,12 @@ class FloatingRateBond(RateProduct):
         dt = 1.0 / frequency
         n = int(round(maturity * frequency))
         for i in range(1, n + 1):
-            fwd = rate_curve.forward_rate(max(dt * (i - 1), 1e-4), dt * i)
-            coupon = nominal * (alpha * fwd + spread) * dt
+            t_prev = dt * (i - 1)
+            t_curr = dt * i
+            df_prev = rate_curve.discount_factor(t_prev) if t_prev > 0 else 1.0
+            df_curr = rate_curve.discount_factor(t_curr)
+            simple_fwd = (df_prev / df_curr - 1.0) / dt
+            coupon = nominal * (alpha * simple_fwd + spread) * dt
             self._add_leg(ZeroCouponBond(coupon, dt * i, rate_curve))
         self._add_leg(ZeroCouponBond(nominal, maturity, rate_curve))
 
