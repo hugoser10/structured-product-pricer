@@ -394,6 +394,39 @@ with tabs[1]:
         c2.metric("Vanille équivalent", f"{van:.4f}")
         c3.metric("Décote due à la barrière", f"{van - p:.4f}")
 
+        K_range = np.linspace(S * 0.4, S * 1.6, 300)
+        van_payoff = (np.maximum(K_range - K, 0) if side == "call"
+                      else np.maximum(K - K_range, 0))
+        rebate_line = np.full_like(K_range, rebate)
+        if "out" in bt:
+            active_payoff   = van_payoff
+            inactive_payoff = rebate_line
+            active_lbl   = "Barrière non touchée (option vivante)"
+            inactive_lbl = "Barrière touchée → rebate"
+        else:
+            active_payoff   = van_payoff
+            inactive_payoff = rebate_line
+            active_lbl   = "Barrière touchée (option activée)"
+            inactive_lbl = "Barrière non touchée → rebate"
+        fig_bar = go.Figure()
+        fig_bar.add_trace(go.Scatter(x=K_range, y=van_payoff, name="Vanille (référence)",
+                                      line=dict(color=COLORS.AXIS, width=1.5, dash="dot")))
+        fig_bar.add_trace(go.Scatter(x=K_range, y=active_payoff, name=active_lbl,
+                                      line=dict(color=COLORS.BLUE, width=2.5)))
+        fig_bar.add_trace(go.Scatter(x=K_range, y=inactive_payoff, name=inactive_lbl,
+                                      line=dict(color=COLORS.RED, width=2, dash="dash")))
+        fig_bar.add_hline(y=0, line_color=COLORS.AXIS, opacity=0.6)
+        fig_bar.add_vline(x=K, line_dash="dot", line_color=COLORS.STRIKE_LINE,
+                           annotation_text="Strike")
+        fig_bar.add_vline(x=H, line_dash="dot", line_color=COLORS.RED,
+                           annotation_text="Barrière")
+        fig_bar.add_vline(x=S, line_color=COLORS.SPOT_LINE, line_dash="dash",
+                           annotation_text="Spot")
+        fig_bar.update_layout(**chart_layout(
+            xaxis_title="Sous-jacent à maturité", yaxis_title="Payoff", height=350,
+        ))
+        st.plotly_chart(fig_bar, use_container_width=True)
+
     # Autocall
     elif product_type == "Autocall":
         c1, c2 = st.columns(2)
@@ -477,7 +510,22 @@ with tabs[1]:
         c2.metric("Delta", f"{g['delta']:.3f}")
         c3.metric("Vega", f"{g['vega']:.3f}")
 
-    # Bonus Certificate 
+        K_range = np.linspace(S * 0.5, S * 1.5, 300)
+        payoff_trk = part * K_range
+        fig_trk = go.Figure()
+        fig_trk.add_trace(go.Scatter(x=K_range, y=payoff_trk, name="Payoff",
+                                      line=dict(color=COLORS.BLUE, width=2.5)))
+        fig_trk.add_trace(go.Scatter(x=K_range, y=payoff_trk - g["price"], name="P&L net",
+                                      line=dict(color=COLORS.TEAL, width=2, dash="dash")))
+        fig_trk.add_hline(y=0, line_color=COLORS.AXIS, opacity=0.6)
+        fig_trk.add_vline(x=S, line_color=COLORS.SPOT_LINE, line_dash="dash",
+                           annotation_text="Spot")
+        fig_trk.update_layout(**chart_layout(
+            xaxis_title="Sous-jacent à maturité", yaxis_title="Valeur", height=320,
+        ))
+        st.plotly_chart(fig_trk, use_container_width=True)
+
+    # Bonus Certificate
     elif product_type == "Bonus Certificate (1320)":
         explain("<b>SSPA 1320</b> - niveau bonus garanti à maturité tant que la "
                 "barrière n'est pas touchée. "
@@ -497,6 +545,28 @@ with tabs[1]:
         c3.metric("Vega", f"{g['vega']:.3f}")
         c4.metric("Niveau bonus", f"{bn:.0f}")
         c5.metric("Barrière", f"{bb:.0f}")
+
+        K_range = np.linspace(S * 0.3, S * 1.7, 300)
+        payoff_no_hit = np.maximum(K_range, bn)
+        payoff_hit    = K_range
+        fig_bon = go.Figure()
+        fig_bon.add_trace(go.Scatter(x=K_range, y=payoff_no_hit,
+                                      name="Barrière non touchée : max(S_T, bonus)",
+                                      line=dict(color=COLORS.GREEN, width=2.5)))
+        fig_bon.add_trace(go.Scatter(x=K_range, y=payoff_hit,
+                                      name="Barrière touchée : S_T",
+                                      line=dict(color=COLORS.RED, width=2, dash="dash")))
+        fig_bon.add_vline(x=S,  line_color=COLORS.SPOT_LINE, line_dash="dash",
+                           annotation_text="Spot")
+        fig_bon.add_vline(x=bn, line_dash="dot", line_color=COLORS.BLUE,
+                           annotation_text="Bonus")
+        fig_bon.add_vline(x=bb, line_dash="dot", line_color=COLORS.RED,
+                           annotation_text="Barrière")
+        fig_bon.add_hline(y=0, line_color=COLORS.AXIS, opacity=0.6)
+        fig_bon.update_layout(**chart_layout(
+            xaxis_title="Sous-jacent à maturité", yaxis_title="Payoff", height=350,
+        ))
+        st.plotly_chart(fig_bon, use_container_width=True)
 
     # Capped Capital Protection 
     elif product_type == "Capped Capital Protection (1110)":
@@ -519,6 +589,27 @@ with tabs[1]:
         c2.metric("Delta", f"{g['delta']:.3f}")
         c3.metric("Capital protégé", f"{nominal:.0f}")
 
+        K_range = np.linspace(S * 0.5, S * 1.5, 300)
+        payoff_ccp = nominal + part * np.clip(K_range - K, 0, cap - K)
+        fig_ccp = go.Figure()
+        fig_ccp.add_trace(go.Scatter(x=K_range, y=payoff_ccp, name="Payoff",
+                                      line=dict(color=COLORS.BLUE, width=2.5)))
+        fig_ccp.add_trace(go.Scatter(x=K_range, y=payoff_ccp - g["price"], name="P&L net",
+                                      line=dict(color=COLORS.TEAL, width=2, dash="dash")))
+        fig_ccp.add_hline(y=0,       line_color=COLORS.AXIS,   opacity=0.6)
+        fig_ccp.add_hline(y=nominal, line_dash="dot", line_color=COLORS.ORANGE,
+                           annotation_text="Capital protégé")
+        fig_ccp.add_vline(x=S,   line_color=COLORS.SPOT_LINE,   line_dash="dash",
+                           annotation_text="Spot")
+        fig_ccp.add_vline(x=K,   line_dash="dot", line_color=COLORS.STRIKE_LINE,
+                           annotation_text="Strike")
+        fig_ccp.add_vline(x=cap, line_dash="dot", line_color=COLORS.PURPLE,
+                           annotation_text="Cap")
+        fig_ccp.update_layout(**chart_layout(
+            xaxis_title="Sous-jacent à maturité", yaxis_title="Payoff", height=350,
+        ))
+        st.plotly_chart(fig_ccp, use_container_width=True)
+
     # Reverse Convertible 
     elif product_type == "Barrier Reverse Convertible (1230)":
         explain("<b>SSPA 1230</b> - coupon élevé, capital exposé à la baisse via un "
@@ -540,6 +631,36 @@ with tabs[1]:
         c1.metric("Prix", f"{p:.2f}")
         c2.metric("Coupon", f"{cr*100:.1f}%")
         c3.metric("Barrière", f"{bb:.0f}")
+
+        K_range = np.linspace(S * 0.3, S * 1.5, 300)
+        coupon_total = cr * nominal * T
+        payoff_no_hit_rc = np.full_like(K_range, nominal + coupon_total)
+        payoff_hit_rc    = np.where(K_range < K,
+                                     nominal * K_range / K + coupon_total,
+                                     nominal + coupon_total)
+        fig_rc = go.Figure()
+        fig_rc.add_trace(go.Scatter(x=K_range, y=payoff_no_hit_rc,
+                                     name="Barrière non touchée (capital + coupons)",
+                                     line=dict(color=COLORS.GREEN, width=2.5)))
+        fig_rc.add_trace(go.Scatter(x=K_range, y=payoff_hit_rc,
+                                     name="Barrière touchée (capital + coupons)",
+                                     line=dict(color=COLORS.RED, width=2.5)))
+        fig_rc.add_hline(y=nominal,               line_dash="dot", line_color=COLORS.ORANGE,
+                          annotation_text="Nominal")
+        fig_rc.add_hline(y=nominal + coupon_total, line_dash="dot", line_color=COLORS.GREEN,
+                          annotation_text="Nominal + coupons")
+        fig_rc.add_vline(x=S,  line_color=COLORS.SPOT_LINE, line_dash="dash",
+                          annotation_text="Spot")
+        fig_rc.add_vline(x=K,  line_dash="dot", line_color=COLORS.STRIKE_LINE,
+                          annotation_text="Strike")
+        fig_rc.add_vline(x=bb, line_dash="dot", line_color=COLORS.RED,
+                          annotation_text="Barrière")
+        fig_rc.add_hline(y=0, line_color=COLORS.AXIS, opacity=0.6)
+        fig_rc.update_layout(**chart_layout(
+            xaxis_title="Sous-jacent à maturité",
+            yaxis_title=f"Payoff total (pour nominal = {nominal:.0f})", height=350,
+        ))
+        st.plotly_chart(fig_rc, use_container_width=True)
 
 # 3. PORTEFEUILLES DE DÉMONSTRATION
 with tabs[2]:
