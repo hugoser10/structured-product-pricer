@@ -250,8 +250,8 @@ with tabs[1]:
     product_type = st.selectbox("Type de produit", [
         "Option Européenne", "Call Spread", "Put Spread", "Butterfly",
         "Option à Barrière", "Autocall",
-        "Tracker Certificate (1100)", "Bonus Certificate (1130)",
-        "Capped Capital Protection (1220)", "Reverse Convertible (1320)",
+        "Tracker Certificate (1300)", "Bonus Certificate (1320)",
+        "Capped Capital Protection (1110)", "Barrier Reverse Convertible (1230)",
         "Obligation Zéro-Coupon", "Obligation à Coupons", "Swap de Taux",
     ])
     st.divider()
@@ -347,6 +347,29 @@ with tabs[1]:
         ]):
             col.metric(label, val)
 
+        K_range = np.linspace(S * 0.5, S * 1.5, 300)
+        payoffs = (np.maximum(K_range - K1, 0)
+                   - 2 * np.maximum(K_range - K2, 0)
+                   + np.maximum(K_range - K3, 0))
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=K_range, y=payoffs, name="Payoff brut",
+                                  line=dict(color=COLORS.AXIS, dash="dash", width=1.5)))
+        fig.add_trace(go.Scatter(x=K_range, y=payoffs - g["price"], name="P&L net",
+                                  line=dict(color=COLORS.TEAL, width=2.5)))
+        fig.add_hline(y=0, line_color=COLORS.AXIS, opacity=0.6)
+        fig.add_vline(x=K1, line_dash="dot", line_color=COLORS.STRIKE_LINE,
+                       annotation_text="K1")
+        fig.add_vline(x=K2, line_dash="dot", line_color=COLORS.STRIKE_LINE,
+                       annotation_text="K2")
+        fig.add_vline(x=K3, line_dash="dot", line_color=COLORS.STRIKE_LINE,
+                       annotation_text="K3")
+        fig.add_vline(x=S, line_color=COLORS.SPOT_LINE, line_dash="dash",
+                       annotation_text="Spot")
+        fig.update_layout(**chart_layout(
+            xaxis_title="Sous-jacent à maturité", yaxis_title="P&L", height=350,
+        ))
+        st.plotly_chart(fig, use_container_width=True)
+
     #  Option à Barrière 
     elif product_type == "Option à Barrière":
         c1, c2, c3 = st.columns(3)
@@ -382,7 +405,7 @@ with tabs[1]:
         sd_pct = c2.slider("Baisse annuelle de la barrière (%)", 0, 15, 5) if sd else 0
 
         total_obs = int(T * n_obs)
-        bcall = {i + 1: max(1.0 - sd_pct/100 * ((i+1)/n_obs - 1), 0.5) if sd else 1.0
+        bcall = {i + 1: max(1.0 - sd_pct/100 * max((i+1)/n_obs - 1, 0), 0.5) if sd else 1.0
                  for i in range(total_obs)}
         heston = HestonModel() if vol_model_choice == "Heston" else None
         sig = vol_surface.get_atm_vol(T)
@@ -440,8 +463,8 @@ with tabs[1]:
         c3.metric("DV01", f"{g['dv01']:,.0f}")
 
     #  Tracker Certificate 
-    elif product_type == "Tracker Certificate (1100)":
-        explain("<b>SSPA 1100</b> - réplication linéaire du sous-jacent. "
+    elif product_type == "Tracker Certificate (1300)":
+        explain("<b>SSPA 1300</b> - réplication linéaire du sous-jacent. "
                 "Composition : participation x Call(K proche de zéro).")
         c1, c2 = st.columns(2)
         T = c1.number_input("Maturité (années)", value=2.0, step=0.5, key="t_trk")
@@ -455,26 +478,29 @@ with tabs[1]:
         c3.metric("Vega", f"{g['vega']:.3f}")
 
     # Bonus Certificate 
-    elif product_type == "Bonus Certificate (1130)":
-        explain("<b>SSPA 1130</b> - niveau bonus garanti à maturité tant que la "
-                "barrière n'est pas touchée. Composition : Call(K=0) + Put(K=bonus) - Put_KI.")
+    elif product_type == "Bonus Certificate (1320)":
+        explain("<b>SSPA 1320</b> - niveau bonus garanti à maturité tant que la "
+                "barrière n'est pas touchée. "
+                "Composition : Call(K=bonus) + ZCB(bonus) - Put_KI(K=bonus, barrière).")
         c1, c2, c3 = st.columns(3)
         T = c1.number_input("Maturité (années)", value=2.0, step=0.5, key="t_bon")
         bn = c2.number_input("Niveau bonus", value=float(round(S * 1.1)))
         bb = c3.number_input("Barrière", value=float(round(S * 0.7)))
         heston = HestonModel() if vol_model_choice == "Heston" else None
         prod = BonusCertificate(S, T, r, barrier=bb, bonus_level=bn,
-                                 vol_surface=vol_surface, heston=heston)
+                                 rate_curve=rc, vol_surface=vol_surface, heston=heston)
         with st.spinner("Pricing Monte Carlo..."):
-            p = prod.price(n_simulations=n_sims, seed=mc_seed)
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Prix", f"{p:.2f}")
-        c2.metric("Niveau bonus", f"{bn:.0f}")
-        c3.metric("Barrière", f"{bb:.0f}")
+            g = prod.greeks(n_simulations=n_sims, seed=mc_seed)
+        c1, c2, c3, c4, c5 = st.columns(5)
+        c1.metric("Prix", f"{g['price']:.2f}")
+        c2.metric("Delta", f"{g['delta']:.3f}")
+        c3.metric("Vega", f"{g['vega']:.3f}")
+        c4.metric("Niveau bonus", f"{bn:.0f}")
+        c5.metric("Barrière", f"{bb:.0f}")
 
     # Capped Capital Protection 
-    elif product_type == "Capped Capital Protection (1220)":
-        explain("<b>SSPA 1220</b> - capital garanti à maturité par le ZCB, participation "
+    elif product_type == "Capped Capital Protection (1110)":
+        explain("<b>SSPA 1110</b> - capital garanti à maturité par le ZCB, participation "
                 "à la hausse plafonnée par le cap. "
                 "Composition : ZCB + participation x CallSpread(strike, cap).")
         c1, c2, c3 = st.columns(3)
@@ -494,13 +520,13 @@ with tabs[1]:
         c3.metric("Capital protégé", f"{nominal:.0f}")
 
     # Reverse Convertible 
-    elif product_type == "Reverse Convertible (1320)":
-        explain("<b>SSPA 1320</b> - coupon élevé, capital exposé à la baisse via un "
+    elif product_type == "Barrier Reverse Convertible (1230)":
+        explain("<b>SSPA 1230</b> - coupon élevé, capital exposé à la baisse via un "
                 "short put barrière. Composition : CouponBond - Put_KI.")
         c1, c2, c3 = st.columns(3)
         T = c1.number_input("Maturité (années)", value=2.0, step=0.5, key="t_rc")
-        K = c2.number_input("Strike (Barrière 2)", value=float(round(S)))
-        bb = c3.number_input("Barrière (Barrière 1)", value=float(round(S * 0.7)))
+        K = c2.number_input("Strike", value=float(round(S)))
+        bb = c3.number_input("Barrière", value=float(round(S * 0.7)))
         c1, c2 = st.columns(2)
         cr = c1.number_input("Coupon (%)", value=8.0, step=0.5) / 100
         nominal = c2.number_input("Nominal", value=100.0, key="n_rc")

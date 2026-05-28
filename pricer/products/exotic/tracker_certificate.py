@@ -5,10 +5,9 @@ from pricer.products.equity.option import Option
 
 class TrackerCertificate(EquityProduct):
     """
-    SSPA 1100 — Tracker Certificate.
-    Réplication : ZCB(participation*K) + participation*Call(K=0).
-    Payoff à maturité : participation*S_T (réplique linéairement le sous-jacent).
-    Le ZCB n'est en pratique qu'un actualisateur si participation = 1 et K = 0.
+    SSPA 1300 — Tracker Certificate.
+    Réplication : participation × Call(K≈0).
+    Payoff à maturité : participation × S_T (réplique linéairement le sous-jacent).
     """
 
     def __init__(self, S: float, T: float, r: float,
@@ -26,4 +25,4 @@ class TrackerCertificate(EquityProduct):
 
     def to_dict(self) -> Dict[str, Any]:
         return {"type": "TrackerCertificate", "S": self.S, "T": self.T,
-                "participation": self.participation, "sspa": 1100}
+                "participation": self.participation, "sspa": 1300}

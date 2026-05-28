@@ -6,7 +6,7 @@ from pricer.products.exotic.barrier_option import BarrierOption
 
 class ReverseConvertible(EquityProduct):
     """
-    SSPA 1320 — Barrier Reverse Convertible.
+    SSPA 1230 — Barrier Reverse Convertible.
     Réplication : CouponBond(coupon élevé) - Put down-and-in à `barrier`.
     Payoff à maturité :
       - si la barrière n'a jamais été touchée OU S_T > strike : nominal
@@ -44,4 +44,4 @@ class ReverseConvertible(EquityProduct):
     def to_dict(self) -> Dict[str, Any]:
         return {"type": "ReverseConvertible", "S": self.S, "T": self.T,
                 "strike": self.strike, "barrier": self.barrier,
-                "coupon_rate": self.coupon_rate, "sspa": 1320}
+                "coupon_rate": self.coupon_rate, "sspa": 1230}

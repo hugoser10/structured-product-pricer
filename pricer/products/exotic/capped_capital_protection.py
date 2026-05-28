@@ -5,7 +5,7 @@ from pricer.products.equity.call_spread import CallSpread
 
 class CappedCapitalProtection(EquityProduct):
     """
-    SSPA 1220 — Capital Protection with Cap.
+    SSPA 1110 — Capital Protection with Cap.
     Réplication : ZCB(nominal) + participation · CallSpread(strike, cap).
     Payoff à maturité :
       nominal + participation · (min(S_T, cap) - strike)^+
@@ -34,4 +34,4 @@ class CappedCapitalProtection(EquityProduct):
     def to_dict(self) -> Dict[str, Any]:
         return {"type": "CappedCapitalProtection", "S": self.S, "T": self.T,
                 "strike": self.strike, "cap": self.cap,
-                "participation": self.participation, "sspa": 1220}
+                "participation": self.participation, "sspa": 1110}
